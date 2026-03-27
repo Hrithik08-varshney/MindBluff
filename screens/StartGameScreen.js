@@ -9,7 +9,7 @@ import {
   colors,
 } from "../styles/globalStyles";
 
-const StartGameScreen = () => {
+const StartGameScreen = ({ onStartGame }) => {
   const [numberInput, setNumberInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
@@ -37,6 +37,7 @@ const StartGameScreen = () => {
       return;
     }
     if (numberInput.trim()) {
+      onStartGame(confirmNumber);
       // TODO: Implement game logic with entered number
     }
   };
