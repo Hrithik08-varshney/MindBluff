@@ -1,8 +1,8 @@
-import { Pressable, Text, StyleSheet } from 'react-native'
+import { Pressable, Text, StyleSheet, View } from 'react-native'
 import React, { useState } from 'react'
 import { buttonStyles, colors } from '../styles/globalStyles'
 
-const PrimaryButton = ({ children, onPress, variant = 'primary' }) => {
+const PrimaryButton = ({ children, onPress, variant = 'primary', style }) => {
   const [isPressed, setIsPressed] = useState(false)
 
   const getButtonStyle = () => {
@@ -23,14 +23,21 @@ const PrimaryButton = ({ children, onPress, variant = 'primary' }) => {
     return buttonStyles.primaryButtonText
   }
 
+  // Check if children is a string (text) or JSX
+  const isTextContent = typeof children === 'string'
+
   return (
     <Pressable
       onPress={onPress}
       onPressIn={() => setIsPressed(true)}
       onPressOut={() => setIsPressed(false)}
-      style={[getButtonStyle(), isPressed && variant === 'primary' && buttonStyles.primaryButtonPressed]}
+      style={[getButtonStyle(), isPressed && variant === 'primary' && buttonStyles.primaryButtonPressed, style]}
     >
-      <Text style={getButtonTextStyle()}>{children}</Text>
+      {isTextContent ? (
+        <Text style={getButtonTextStyle()}>{children}</Text>
+      ) : (
+        children
+      )}
     </Pressable>
   )
 }

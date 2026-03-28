@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, FlatList } from "react-native";
 import React, { useEffect, useState } from "react";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import RateTitle from "../components/RateTitle";
 import GuessDisplay from "../components/GuessDisplay";
 import PrimaryButton from "../components/PrimaryButton";
 import LyingAlert from "../components/LyingAlert";
+import { colors, typography, spacing } from "../styles/globalStyles";
 
 const generateRandomBetween = (min, max, exclude) => {
   // Prevent infinite recursion when range is invalid
@@ -48,13 +50,21 @@ const GameScreen = ({ userNumber, onGameOver }) => {
   const [rounds, setRounds] = useState(0);
   const [showLyingAlert, setShowLyingAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [guessHistory, setGuessHistory] = useState([
+    {
+      round: 0,
+      guess: initalGuess,
+      status: "initial",
+      description: "Initial guess"
+    }
+  ]);
 
   useEffect(() => {
     if (currentGuess === userNumber) {
-      onGameOver();
+      onGameOver(rounds);
       // Game over - user guessed the number
     }
-  }, [currentGuess, userNumber, onGameOver]);
+  }, [currentGuess, userNumber, onGameOver, rounds]);
 
   const nextGuessHandler = (direction) => {
     // Prevent handler from running if game is already over
@@ -92,29 +102,81 @@ const GameScreen = ({ userNumber, onGameOver }) => {
       newMax,
       null,
     );
+    const newRound = rounds + 1;
     setCurrentGuess(newGuess);
-    setRounds((prev) => prev + 1);
+    setRounds(newRound);
+    
+    // Add to history
+    const directionText = direction === "lower" ? "Lower" : "Higher";
+    setGuessHistory((prev) => [
+      ...prev,
+      {
+        round: newRound,
+        guess: newGuess,
+        status: "guess",
+        description: `Tried ${directionText}`
+      }
+    ]);
   };
 
   const handleLower = () => nextGuessHandler("lower");
   const handleHigher = () => nextGuessHandler("higher");
 
+  // Calculate rating based on number of guesses
+  const calculateRating = () => {
+    if (rounds <= 3) return 5; // Excellent
+    if (rounds <= 6) return 4.5; // Very Good
+    if (rounds <= 9) return 4; // Good
+    if (rounds <= 12) return 3.5; // Average
+    if (rounds <= 15) return 3; // Below Average
+    return 2.5; // Poor
+  };
+
   return (
     <View>
-      <RateTitle title="Opponent's Guess" rating={4.5} />
+      <RateTitle title="Opponent's Guess" rating={calculateRating()} />
       <GuessDisplay guess={currentGuess} label="Current Guess" />
-      <View>
-        <Text>Higher or Lower?</Text>
+      <View style={styles.promptContainer}>
+        <Text style={styles.promptText}>Higher or Lower?</Text>
         <View style={styles.buttonsContainer}>
           <PrimaryButton onPress={handleLower}>
-            <Text style={{ fontSize: 28, fontWeight: "bold" }}>−</Text>
+            <Ionicons name="remove" size={28} color={colors.white} />
           </PrimaryButton>
           <PrimaryButton onPress={handleHigher}>
-            <Text style={{ fontSize: 28, fontWeight: "bold" }}>+</Text>
+            <Ionicons name="add" size={28} color={colors.white} />
           </PrimaryButton>
         </View>
-        <View>
-          <Text>Log Rounds: {rounds}</Text>
+        <View style={styles.historyContainer}>
+          <Text style={styles.historyTitle}>
+            <Ionicons name="list" size={18} color={colors.primary} /> Game History
+          </Text>
+          <FlatList
+            data={guessHistory}
+            renderItem={({ item }) => (
+              <View style={styles.historyEntry}>
+                <View style={styles.historyLeft}>
+                  <View style={styles.roundBadge}>
+                    <Text style={styles.roundBadgeText}>{item.round}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.guessValue}>{item.guess}</Text>
+                    <Text style={styles.historyDescription}>{item.description}</Text>
+                  </View>
+                </View>
+                <Ionicons 
+                  name={item.status === "initial" ? "arrow-forward" : "checkmark-outline"} 
+                  size={20} 
+                  color={item.status === "initial" ? colors.accent : colors.primary}
+                />
+              </View>
+            )}
+            keyExtractor={(item, index) => index.toString()}
+            scrollEnabled={true}
+            nestedScrollEnabled={true}
+            style={styles.historyScroll}
+            contentContainerStyle={styles.historyListContent}
+            scrollIndicatorInsets={{ right: 1 }}
+          />
         </View>
       </View>
       <LyingAlert
@@ -127,12 +189,87 @@ const GameScreen = ({ userNumber, onGameOver }) => {
 };
 
 const styles = StyleSheet.create({
+  promptContainer: {
+    alignItems: 'center',
+    marginVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  promptText: {
+    ...typography.heading,
+    color: colors.primary,
+    marginBottom: spacing.md,
+    letterSpacing: 0.5,
+  },
   buttonsContainer: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 16,
     marginVertical: 20,
     paddingHorizontal: 16,
+  },
+  historyContainer: {
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+    width: '100%',
+  },
+  historyTitle: {
+    ...typography.bodyBold,
+    color: colors.primary,
+    marginBottom: spacing.md,
+    fontSize: 16,
+  },
+  historyScroll: {
+    backgroundColor: colors.lightGray,
+    borderRadius: 12,
+    paddingVertical: spacing.md,
+    width: '100%',
+    maxHeight: 250,
+  },
+  historyListContent: {
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.xxl,
+  },
+  historyEntry: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    marginHorizontal: spacing.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+  historyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  roundBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  roundBadgeText: {
+    color: colors.white,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  guessValue: {
+    ...typography.bodyBold,
+    color: colors.charcoal,
+    fontSize: 16,
+  },
+  historyDescription: {
+    ...typography.small,
+    color: colors.darkGray,
+    marginTop: 2,
   },
 });
 
