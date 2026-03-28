@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, FlatList } from "react-native";
+import { View, Text, StyleSheet, FlatList, Modal } from "react-native";
 import React, { useEffect, useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import RateTitle from "../components/RateTitle";
@@ -133,62 +133,81 @@ const GameScreen = ({ userNumber, onGameOver }) => {
   };
 
   return (
-    <View>
-      <RateTitle title="Opponent's Guess" rating={calculateRating()} />
-      <GuessDisplay guess={currentGuess} label="Current Guess" />
-      <View style={styles.promptContainer}>
-        <Text style={styles.promptText}>Higher or Lower?</Text>
-        <View style={styles.buttonsContainer}>
-          <PrimaryButton onPress={handleLower}>
-            <Ionicons name="remove" size={28} color={colors.white} />
-          </PrimaryButton>
-          <PrimaryButton onPress={handleHigher}>
-            <Ionicons name="add" size={28} color={colors.white} />
-          </PrimaryButton>
-        </View>
-        <View style={styles.historyContainer}>
-          <Text style={styles.historyTitle}>
-            <Ionicons name="list" size={18} color={colors.primary} /> Game History
-          </Text>
-          <FlatList
-            data={guessHistory}
-            renderItem={({ item }) => (
-              <View style={styles.historyEntry}>
-                <View style={styles.historyLeft}>
-                  <View style={styles.roundBadge}>
-                    <Text style={styles.roundBadgeText}>{item.round}</Text>
+    <>
+      <View style={styles.container}>
+        <View style={styles.contentContainer}>
+          <RateTitle title="Opponent's Guess" rating={calculateRating()} />
+          <GuessDisplay guess={currentGuess} label="Current Guess" />
+          <View style={styles.promptContainer}>
+            <Text style={styles.promptText}>Higher or Lower?</Text>
+            <View style={styles.buttonsContainer}>
+              <PrimaryButton onPress={handleLower}>
+                <Ionicons name="remove" size={28} color={colors.white} />
+              </PrimaryButton>
+              <PrimaryButton onPress={handleHigher}>
+                <Ionicons name="add" size={28} color={colors.white} />
+              </PrimaryButton>
+            </View>
+            <View style={styles.historyContainer}>
+              <Text style={styles.historyTitle}>
+                <Ionicons name="list" size={18} color={colors.primary} /> Game History
+              </Text>
+              <FlatList
+                data={guessHistory}
+                renderItem={({ item }) => (
+                  <View style={styles.historyEntry}>
+                    <View style={styles.historyLeft}>
+                      <View style={styles.roundBadge}>
+                        <Text style={styles.roundBadgeText}>{item.round}</Text>
+                      </View>
+                      <View>
+                        <Text style={styles.guessValue}>{item.guess}</Text>
+                        <Text style={styles.historyDescription}>{item.description}</Text>
+                      </View>
+                    </View>
+                    <Ionicons 
+                      name={item.status === "initial" ? "arrow-forward" : "checkmark-outline"} 
+                      size={20} 
+                      color={item.status === "initial" ? colors.accent : colors.primary}
+                    />
                   </View>
-                  <View>
-                    <Text style={styles.guessValue}>{item.guess}</Text>
-                    <Text style={styles.historyDescription}>{item.description}</Text>
-                  </View>
-                </View>
-                <Ionicons 
-                  name={item.status === "initial" ? "arrow-forward" : "checkmark-outline"} 
-                  size={20} 
-                  color={item.status === "initial" ? colors.accent : colors.primary}
-                />
-              </View>
-            )}
-            keyExtractor={(item, index) => index.toString()}
-            scrollEnabled={true}
-            nestedScrollEnabled={true}
-            style={styles.historyScroll}
-            contentContainerStyle={styles.historyListContent}
-            scrollIndicatorInsets={{ right: 1 }}
-          />
+                )}
+                keyExtractor={(item, index) => index.toString()}
+                scrollEnabled={true}
+                nestedScrollEnabled={true}
+                style={styles.historyScroll}
+                contentContainerStyle={styles.historyListContent}
+                scrollIndicatorInsets={{ right: 1 }}
+              />
+            </View>
+          </View>
         </View>
       </View>
-      <LyingAlert
-        visible={showLyingAlert}
-        message={alertMessage}
-        onDismiss={() => setShowLyingAlert(false)}
-      />
-    </View>
+      
+      <Modal 
+        visible={showLyingAlert} 
+        transparent={true} 
+        animationType="fade"
+        onRequestClose={() => setShowLyingAlert(false)}
+      >
+        <LyingAlert
+          visible={showLyingAlert}
+          message={alertMessage}
+          onDismiss={() => setShowLyingAlert(false)}
+        />
+      </Modal>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
+  contentContainer: {
+    flex: 1,
+  },
   promptContainer: {
     alignItems: 'center',
     marginVertical: spacing.lg,
